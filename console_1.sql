@@ -12,7 +12,7 @@ CREATE TABLE projet_bd.etudiants(
     semestre projet_bd.semestres NOT NULL,
     mdp VARCHAR (50) NOT NULL,
     nb_candidatures_en_attente INTEGER DEFAULT 0 NOT NULL
-    );
+);
 
 CREATE TABLE projet_bd.entreprises(
     id_entreprise CHAR(3) CHECK (id_entreprise SIMILAR TO '[A-Z]{3}')PRIMARY KEY,
@@ -24,12 +24,12 @@ CREATE TABLE projet_bd.entreprises(
 
 CREATE TABLE projet_bd.offres_de_stage (
     id_offre SERIAL PRIMARY KEY,
-    code VARCHAR UNIQUE NOT NULL,
+    code VARCHAR UNIQUE NOT NULL CHECK (code SIMILAR TO entreprise ||'[1-9]{1}[0-9]{0,}'),
     semestre projet_bd.semestres NOT NULL,
     etat projet_bd.etats_offre NOT NULL DEFAULT 'non_validee',
     description VARCHAR NOT NULL,
     entreprise CHAR(3) NOT NULL REFERENCES projet_bd.entreprises(id_entreprise),
-    etudiant INTEGER UNIQUE NULL REFERENCES projet_bd.etudiants(id_etudiant)
+    etudiant INTEGER UNIQUE NULL REFERENCES projet_bd.etudiants(id_etudiant) DEFAULT NULL
 );
 
 CREATE TABLE projet_bd.mots_cles(
@@ -52,7 +52,6 @@ CREATE TABLE projet_bd.candidatures(
     etat projet_bd.etats_candidatures NOT NULL DEFAULT 'en_attente'
 );
 
---- Ajout d'étudiants
 INSERT INTO projet_bd.etudiants (nom, prenom, email, semestre, mdp, nb_candidatures_en_attente)
 VALUES
   ('Dupont', 'Jean', 'jean.dupont@student.vinci.be', 'Q1', 'MotDePasse123', 0),
@@ -61,15 +60,13 @@ VALUES
   ('Girard', 'Sophie', 'sophie.girard@student.vinci.be', 'Q2', 'Secret567', 0),
   ('Lefevre', 'Luc', 'luc.lefevre@student.vinci.be', 'Q1', 'MotDePasseComplex1', 0);
 
-
---- Ajout de mots clés
 INSERT INTO projet_bd.mots_cles (nom) VALUES ('Java');
 INSERT INTO projet_bd.mots_cles (nom) VALUES ('Web');
 INSERT INTO projet_bd.mots_cles (nom) VALUES ('SQL');
 INSERT INTO projet_bd.mots_cles (nom) VALUES ('Math');
 INSERT INTO projet_bd.mots_cles (nom) VALUES ('Anglais');
 
---- Ajout d'entreprises
+-- PAS OUBLIER DE MODIFIER LE CHAMP MOT DE PASSE DANS DSD
 INSERT INTO projet_bd.entreprises (id_entreprise, nom, adresse, email, mdp)
 VALUES ('TEC', 'Tech Solutions', '123 Rue de l''Industrie', 'contact@techsolutions.com', 'motdepasseABC');
 
@@ -84,35 +81,32 @@ VALUES ('GLB', 'Global Innovations', '101 Rue Futuriste', 'contact@globalinnovat
 
 INSERT INTO projet_bd.entreprises (id_entreprise, nom, adresse, email, mdp)
 VALUES ('ADV', 'Advancement Solutions', '202 Avenue Avancée', 'contact@advancementsolutions.com', 'motdepasseJKL');
-INSERT INTO projet_bd.offres_de_stage (code, semestre, etat, description, entreprise, etudiant)
-VALUES ('TS1', 'Q1', 'non_validee', 'Stage en développement logiciel', 'TEC', NULL);
 
 INSERT INTO projet_bd.offres_de_stage (code, semestre, etat, description, entreprise, etudiant)
-VALUES ('IC1', 'Q2', 'non_validee', 'Stage en innovation technologique', 'INV', NULL);
+VALUES ('TEC1', 'Q1', 'non_validee', 'Stage en développement logiciel', 'TEC', NULL);
 
 INSERT INTO projet_bd.offres_de_stage (code, semestre, etat, description, entreprise, etudiant)
-VALUES ('FT1', 'Q1', 'non_validee', 'Stage en technologies futures', 'FUT', NULL);
+VALUES ('INV1', 'Q2', 'non_validee', 'Stage en innovation technologique', 'INV', NULL);
 
 INSERT INTO projet_bd.offres_de_stage (code, semestre, etat, description, entreprise, etudiant)
-VALUES ('GI1', 'Q2', 'non_validee', 'Stage en solutions globales', 'GLB', NULL);
+VALUES ('FUT1', 'Q1', 'non_validee', 'Stage en technologies futures', 'FUT', NULL);
 
 INSERT INTO projet_bd.offres_de_stage (code, semestre, etat, description, entreprise, etudiant)
-VALUES ('AS1', 'Q1', 'non_validee', 'Stage en avancement technologique', 'ADV', NULL);
+VALUES ('GLB1', 'Q2', 'non_validee', 'Stage en solutions globales', 'GLB', NULL);
 
---Ajout d'offre de stage
-INSERT INTO projet_bd.mots_cles_de_stage (mot_cle, offre_stage)
-VALUES (1, 1);
+INSERT INTO projet_bd.offres_de_stage (code, semestre, etat, description, entreprise, etudiant)
+VALUES ('ADV1', 'Q1', 'non_validee', 'Stage en avancement technologique', 'ADV', NULL);
 
-INSERT INTO projet_bd.mots_cles_de_stage (mot_cle, offre_stage)
-VALUES (2, 2);
+CREATE OR REPLACE FUNCTION projet_bd.attribuer_mot_cle() RETURNS TRIGGER AS $$
+    DECLARE
+        total INTEGER;
+    BEGIN
+        SELECT COUNT(*) FROM projet_bd.mots_cles_de_stage mcs WHERE mcs.offre_stage = NEW.offre_stage INTO total;
+        IF (total = 3) THEN
+            RAISE 'Il y a déjà 3 mots clés associés à cette offre de stage';
+        END IF;
+        INSERT INTO projet_bd.mots_cles_de_stage VALUES (NEW.mot_cle, NEW.offre_stage);
+    END
+$$ LANGUAGE plpgsql;
 
-INSERT INTO projet_bd.mots_cles_de_stage (mot_cle, offre_stage)
-VALUES (3, 3);
-
-INSERT INTO projet_bd.mots_cles_de_stage (mot_cle, offre_stage)
-VALUES (4, 4);
-
-INSERT INTO projet_bd.mots_cles_de_stage (mot_cle, offre_stage)
-VALUES (5, 5);
-
-
+CREATE TRIGGER mots_cles_de_stage_trigger BEFORE INSERT ON projet_bd.mots_cles_de_stage FOR EACH ROW EXECUTE PROCEDURE projet_bd.attribuer_mot_cle();
