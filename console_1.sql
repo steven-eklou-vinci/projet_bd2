@@ -114,6 +114,5 @@ VALUES (4, 4);
 
 INSERT INTO projet_bd.mots_cles_de_stage (mot_cle, offre_stage)
 VALUES (5, 5);
---tv'
 
 
