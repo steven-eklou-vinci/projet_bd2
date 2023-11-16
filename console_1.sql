@@ -105,8 +105,13 @@ CREATE OR REPLACE FUNCTION projet_bd.attribuer_mot_cle() RETURNS TRIGGER AS $$
         IF (total = 3) THEN
             RAISE 'Il y a déjà 3 mots clés associés à cette offre de stage';
         END IF;
-        INSERT INTO projet_bd.mots_cles_de_stage VALUES (NEW.mot_cle, NEW.offre_stage);
+        RETURN NEW;
     END
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER mots_cles_de_stage_trigger BEFORE INSERT ON projet_bd.mots_cles_de_stage FOR EACH ROW EXECUTE PROCEDURE projet_bd.attribuer_mot_cle();
+
+INSERT INTO projet_bd.mots_cles_de_stage VALUES (1, 1);
+INSERT INTO projet_bd.mots_cles_de_stage VALUES (2, 1);
+INSERT INTO projet_bd.mots_cles_de_stage VALUES (3, 1);
+-- INSERT INTO projet_bd.mots_cles_de_stage VALUES (4, 1); cette requête est sensé renvoyée l'erreur du trigger
