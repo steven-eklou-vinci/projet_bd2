@@ -45,9 +45,9 @@ CREATE TABLE projet_bd.mots_cles_de_stage(
 
 CREATE TABLE projet_bd.candidatures(
 
-    PRIMARY KEY (etudiant,offres_stage),
+    PRIMARY KEY (etudiant,offre_stage),
     etudiant INTEGER REFERENCES projet_bd.etudiants (id_etudiant) NOT NULL ,
-    offres_stage INTEGER REFERENCES projet_bd.offres_de_stage (id_offre) NOT NULL,
+    offre_stage INTEGER REFERENCES projet_bd.offres_de_stage (id_offre) NOT NULL,
     motivation VARCHAR(250) NOT NULL ,
     etat projet_bd.etats_candidatures NOT NULL DEFAULT 'en_attente'
 );
