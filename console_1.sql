@@ -152,4 +152,4 @@ CREATE FUNCTION projet_bd.valider_offre(id_offre_to_modify INTEGER) RETURNS INTE
     $$ LANGUAGE plpgsql;
 
 SELECT * FROM projet_bd.valider_offre(1);
--- SELECT * FROM projet_bd.valider_offre(1); -- sensé renvoyer une exception car etat déjà changé
+SELECT * FROM projet_bd.valider_offre(1); -- sensé renvoyer une exception car etat déjà changé
