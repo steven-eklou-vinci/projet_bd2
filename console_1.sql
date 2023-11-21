@@ -38,9 +38,9 @@ CREATE TABLE projet_bd.mots_cles(
 );
 
 CREATE TABLE projet_bd.mots_cles_de_stage(
-  mot_cle INTEGER NOT NULL REFERENCES projet_bd.mots_cles(id_mot_cle),
   offre_stage INTEGER NOT NULL REFERENCES projet_bd.offres_de_stage(id_offre),
-  PRIMARY KEY (mot_cle, offre_stage)
+  mot_cle INTEGER NOT NULL REFERENCES projet_bd.mots_cles(id_mot_cle),
+  PRIMARY KEY (offre_stage, mot_cle)
 );
 
 CREATE TABLE projet_bd.candidatures(
@@ -112,6 +112,44 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER mots_cles_de_stage_trigger BEFORE INSERT ON projet_bd.mots_cles_de_stage FOR EACH ROW EXECUTE PROCEDURE projet_bd.attribuer_mot_cle();
 
 INSERT INTO projet_bd.mots_cles_de_stage VALUES (1, 1);
-INSERT INTO projet_bd.mots_cles_de_stage VALUES (2, 1);
-INSERT INTO projet_bd.mots_cles_de_stage VALUES (3, 1);
--- INSERT INTO projet_bd.mots_cles_de_stage VALUES (4, 1); cette requête est sensé renvoyée l'erreur du trigger
+INSERT INTO projet_bd.mots_cles_de_stage VALUES (1, 2);
+INSERT INTO projet_bd.mots_cles_de_stage VALUES (1, 3);
+-- INSERT INTO projet_bd.mots_cles_de_stage VALUES (1, 4); -- cette requête est sensé renvoyée l'erreur du trigger
+
+-- Voir les offres de stage dans l’état « non validée ». Pour chaque offre, on affichera son
+-- code, son semestre, le nom de l’entreprise et sa description
+CREATE VIEW projet_bd.offre_stage_non_valide AS
+    SELECT os.code, os.semestre, e.nom, os.description
+    FROM projet_bd.offres_de_stage os, projet_bd.entreprises e
+    WHERE os.entreprise = e.id_entreprise
+    AND os.etat = 'non_validee';
+
+SELECT * FROM projet_bd.offre_stage_non_valide;
+
+-- Valider une offre de stage en donnant son code. On ne pourra valider que des offres
+-- de stages « non validée ».
+CREATE OR REPLACE FUNCTION projet_bd.valider_offre_stage() RETURNS TRIGGER AS $$
+    DECLARE
+    BEGIN
+        IF ('non_validee' != (SELECT os.etat FROM projet_bd.offres_de_stage os WHERE os.id_offre = NEW.id_offre)) THEN
+            RAISE 'Cette offre de stage est dans un autre état que non validée';
+        END IF;
+        RETURN NEW;
+    END
+
+    $$ LANGUAGE plpgsql;
+
+CREATE TRIGGER valider_offre_de_stage_trigger BEFORE UPDATE ON projet_bd.offres_de_stage FOR EACH ROW EXECUTE PROCEDURE projet_bd.valider_offre_stage();
+
+CREATE FUNCTION projet_bd.valider_offre(id_offre_to_modify INTEGER) RETURNS INTEGER AS $$
+    DECLARE
+    BEGIN
+        UPDATE projet_bd.offres_de_stage os
+        SET etat = 'validee'
+        WHERE os.id_offre = id_offre_to_modify;
+        RETURN id_offre_to_modify;
+    END
+    $$ LANGUAGE plpgsql;
+
+SELECT * FROM projet_bd.valider_offre(1);
+-- SELECT * FROM projet_bd.valider_offre(1); -- sensé renvoyer une exception car etat déjà changé
