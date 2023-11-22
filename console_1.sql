@@ -52,82 +52,69 @@ CREATE TABLE projet_bd.candidatures(
     etat projet_bd.etats_candidatures NOT NULL DEFAULT 'en_attente'
 );
 
-INSERT INTO projet_bd.etudiants (nom, prenom, email, semestre, mdp, nb_candidatures_en_attente)
-VALUES
-  ('Dupont', 'Jean', 'jean.dupont@student.vinci.be', 'Q1', 'MotDePasse123', 0),
-  ('Martin', 'Marie', 'marie.martin@student.vinci.be', 'Q2', 'Securite456', 0),
-  ('Leclerc', 'Paul', 'paul.leclerc@student.vinci.be', 'Q1', 'Confidentiel789', 0),
-  ('Girard', 'Sophie', 'sophie.girard@student.vinci.be', 'Q2', 'Secret567', 0),
-  ('Lefevre', 'Luc', 'luc.lefevre@student.vinci.be', 'Q1', 'MotDePasseComplex1', 0);
-
-INSERT INTO projet_bd.mots_cles (nom) VALUES ('Java');
-INSERT INTO projet_bd.mots_cles (nom) VALUES ('Web');
-INSERT INTO projet_bd.mots_cles (nom) VALUES ('SQL');
-INSERT INTO projet_bd.mots_cles (nom) VALUES ('Math');
-INSERT INTO projet_bd.mots_cles (nom) VALUES ('Anglais');
-
--- PAS OUBLIER DE MODIFIER LE CHAMP MOT DE PASSE DANS DSD
-INSERT INTO projet_bd.entreprises (id_entreprise, nom, adresse, email, mdp)
-VALUES ('TEC', 'Tech Solutions', '123 Rue de l''Industrie', 'contact@techsolutions.com', 'motdepasseABC');
-
-INSERT INTO projet_bd.entreprises (id_entreprise, nom, adresse, email, mdp)
-VALUES ('INV', 'Innovate Co.', '456 Avenue Technologique', 'contact@innovateco.com', 'motdepasseXYZ');
-
-INSERT INTO projet_bd.entreprises (id_entreprise, nom, adresse, email, mdp)
-VALUES ('FUT', 'Future Tech', '789 Boulevard Innovant', 'contact@futuretech.com', 'motdepasseDEF');
-
-INSERT INTO projet_bd.entreprises (id_entreprise, nom, adresse, email, mdp)
-VALUES ('GLB', 'Global Innovations', '101 Rue Futuriste', 'contact@globalinnovations.com', 'motdepasseGHI');
-
-INSERT INTO projet_bd.entreprises (id_entreprise, nom, adresse, email, mdp)
-VALUES ('ADV', 'Advancement Solutions', '202 Avenue Avancée', 'contact@advancementsolutions.com', 'motdepasseJKL');
-
-INSERT INTO projet_bd.offres_de_stage (code, semestre, etat, description, entreprise, etudiant)
-VALUES ('TEC1', 'Q1', 'non_validee', 'Stage en développement logiciel', 'TEC', NULL);
-
-INSERT INTO projet_bd.offres_de_stage (code, semestre, etat, description, entreprise, etudiant)
-VALUES ('INV1', 'Q2', 'non_validee', 'Stage en innovation technologique', 'INV', NULL);
-
-INSERT INTO projet_bd.offres_de_stage (code, semestre, etat, description, entreprise, etudiant)
-VALUES ('FUT1', 'Q1', 'non_validee', 'Stage en technologies futures', 'FUT', NULL);
-
-INSERT INTO projet_bd.offres_de_stage (code, semestre, etat, description, entreprise, etudiant)
-VALUES ('GLB1', 'Q2', 'non_validee', 'Stage en solutions globales', 'GLB', NULL);
-
-INSERT INTO projet_bd.offres_de_stage (code, semestre, etat, description, entreprise, etudiant)
-VALUES ('ADV1', 'Q1', 'non_validee', 'Stage en avancement technologique', 'ADV', NULL);
-
-CREATE OR REPLACE FUNCTION projet_bd.attribuer_mot_cle() RETURNS TRIGGER AS $$
+--application professeur 1.
+CREATE FUNCTION projet_bd.encoder_etudiant(nNom VARCHAR, nPrenom VARCHAR, nMail VARCHAR, nSemestre projet_bd.semestres, nMdp VARCHAR) RETURNS INTEGER AS $$
     DECLARE
-        total INTEGER;
+        id INTEGER;
     BEGIN
-        SELECT COUNT(*) FROM projet_bd.mots_cles_de_stage mcs WHERE mcs.offre_stage = NEW.offre_stage INTO total;
-        IF (total = 3) THEN
-            RAISE 'Il y a déjà 3 mots clés associés à cette offre de stage';
-        END IF;
-        RETURN NEW;
+        INSERT INTO projet_bd.etudiants(id_etudiant, nom, prenom, email, semestre, mdp) VALUES (DEFAULT, nNom, nPrenom, nMail, nSemestre,nMdp)
+        RETURNING id_etudiant INTO id;
+        RETURN id;
     END
-$$ LANGUAGE plpgsql;
+    $$ LANGUAGE plpgsql
+;
+--insert application professeur 1.
+SELECT * FROM projet_bd.encoder_etudiant('Dupont', 'Jean', 'jean.dupont@student.vinci.be', 'Q1', 'MotDePasse123');
+SELECT * FROM projet_bd.encoder_etudiant ('Martin', 'Marie', 'marie.martin@student.vinci.be', 'Q2', 'Securite456');
+SELECT * FROM projet_bd.encoder_etudiant('Leclerc', 'Paul', 'paul.leclerc@student.vinci.be', 'Q1', 'Confidentiel789');
+SELECT * FROM projet_bd.encoder_etudiant('Girard', 'Sophie', 'sophie.girard@student.vinci.be', 'Q2', 'Secret567');
+SELECT * FROM projet_bd.encoder_etudiant('Lefevre', 'Luc', 'luc.lefevre@student.vinci.be', 'Q1', 'MotDePasseComplex1');
 
-CREATE TRIGGER mots_cles_de_stage_trigger BEFORE INSERT ON projet_bd.mots_cles_de_stage FOR EACH ROW EXECUTE PROCEDURE projet_bd.attribuer_mot_cle();
+-- application professeur 2
+CREATE FUNCTION projet_bd.encoder_entreprise(nvx_id_entreprise CHAR(3),nvx_nom VARCHAR(100), nvx_adresse VARCHAR(150), nvx_mdp VARCHAR(100),nvx_mail VARCHAR(150)) RETURNS CHAR(3) AS $$
+    DECLARE
+        id CHAR(3);
+    BEGIN
+        INSERT INTO projet_bd.entreprises(id_entreprise,nom, adresse, email, mdp) VALUES (nvx_id_entreprise,nvx_nom, nvx_adresse, nvx_mail,nvx_mdp) RETURNING id_entreprise INTO id;
+        RETURN id;
+    END
+    $$ LANGUAGE plpgsql;
 
-INSERT INTO projet_bd.mots_cles_de_stage VALUES (1, 1);
-INSERT INTO projet_bd.mots_cles_de_stage VALUES (1, 2);
-INSERT INTO projet_bd.mots_cles_de_stage VALUES (1, 3);
--- INSERT INTO projet_bd.mots_cles_de_stage VALUES (1, 4); -- cette requête est sensé renvoyée l'erreur du trigger
+-- insertion application professeur 2
+SELECT * FROM projet_bd.encoder_entreprise('TEC', 'Tech Solutions', '123 Rue de l''Industrie', 'contact@techsolutions.com', 'motdepasseABC');
+SELECT * FROM projet_bd.encoder_entreprise('INV', 'Innovate Co.', '456 Avenue Technologique', 'contact@innovateco.com', 'motdepasseXYZ');
+SELECT * FROM projet_bd.encoder_entreprise('FUT', 'Future Tech', '789 Boulevard Innovant', 'contact@futuretech.com', 'motdepasseDEF');
+SELECT * FROM projet_bd.encoder_entreprise('GLB', 'Global Innovations', '101 Rue Futuriste', 'contact@globalinnovations.com', 'motdepasseGHI');
+SELECT * FROM projet_bd.encoder_entreprise('ADV', 'Advancement Solutions', '202 Avenue Avancée', 'contact@advancementsolutions.com', 'motdepasseJKL');
 
--- Voir les offres de stage dans l’état « non validée ». Pour chaque offre, on affichera son
--- code, son semestre, le nom de l’entreprise et sa description
+-- application professeur 3
+CREATE OR REPLACE FUNCTION projet_bd.encoder_mot_cle(nvNom VARCHAR) RETURNS INTEGER AS $$
+    DECLARE
+        id INTEGER;
+    BEGIN
+        INSERT INTO projet_bd.mots_cles (nom) VALUES (nvNom) RETURNING id_mot_cle INTO id;
+        RETURN id;
+    END
+    $$ LANGUAGE plpgsql;
+
+-- insertion application professeur 3
+SELECT * FROM projet_bd.encoder_mot_cle('Java');
+SELECT * FROM projet_bd.encoder_mot_cle('Web');
+SELECT * FROM projet_bd.encoder_mot_cle('SQL');
+SELECT * FROM projet_bd.encoder_mot_cle('Math');
+SELECT * FROM projet_bd.encoder_mot_cle('Anglais');
+
+-- application professeur 4
 CREATE VIEW projet_bd.offre_stage_non_valide AS
     SELECT os.code, os.semestre, e.nom, os.description
     FROM projet_bd.offres_de_stage os, projet_bd.entreprises e
     WHERE os.entreprise = e.id_entreprise
     AND os.etat = 'non_validee';
 
+-- appel vue application professeur 4
 SELECT * FROM projet_bd.offre_stage_non_valide;
 
--- Valider une offre de stage en donnant son code. On ne pourra valider que des offres
--- de stages « non validée ».
+-- application professeur 5
 CREATE OR REPLACE FUNCTION projet_bd.valider_offre_stage() RETURNS TRIGGER AS $$
     DECLARE
     BEGIN
@@ -152,4 +139,76 @@ CREATE FUNCTION projet_bd.valider_offre(id_offre_to_modify INTEGER) RETURNS INTE
     $$ LANGUAGE plpgsql;
 
 SELECT * FROM projet_bd.valider_offre(1);
-SELECT * FROM projet_bd.valider_offre(1); -- sensé renvoyer une exception car etat déjà changé
+-- SELECT * FROM projet_bd.valider_offre(1); -- sensé renvoyer une exception car etat déjà changé
+
+--application professeur 6.
+CREATE VIEW projet_bd.offre_stage_valide AS
+    SELECT os.code, os.semestre, e.nom, os.description
+    FROM projet_bd.offres_de_stage os, projet_bd.entreprises e
+    WHERE os.entreprise = e.id_entreprise
+    AND os.etat = 'validee';
+
+SELECT * FROM projet_bd.offre_stage_valide;
+
+--application professeur 7.
+CREATE VIEW projet_bd.etudiant_pas_de_stage AS
+    SELECT et.nom, et.prenom, et.email, et.nb_candidatures_en_attente
+    FROM projet_bd.etudiants et, projet_bd.candidatures ca
+    WHERE et.id_etudiant = ca.etudiant
+        AND ca.etat !='acceptee';
+
+SELECT * FROM projet_bd.etudiant_pas_de_stage;
+
+--application professeur 8.
+CREATE VIEW projet_bd.offres_stage_attribuees AS
+    SELECT ods.code, en.nom AS nom_entreprise, et.nom AS nom_etudiant, et.prenom AS prenom_etudiant
+    FROM projet_bd.offres_de_stage ods, projet_bd.entreprises en, projet_bd.etudiants et
+    WHERE ods.etudiant = et.id_etudiant
+      AND ods.entreprise = en.id_entreprise
+      AND ods.etat = 'attribuee';
+
+SELECT * FROM projet_bd.offres_stage_attribuees;
+
+-- application entreprises 1
+CREATE OR REPLACE FUNCTION projet_bd.encoder_offres_de_stage() RETURNS TRIGGER AS $$
+    DECLARE
+        total INTEGER;
+    BEGIN
+        SELECT COUNT(*) FROM projet_bd.offres_de_stage as os WHERE os.entreprise = NEW.entreprise INTO total;
+        NEW.code := NEW.entreprise || (total+1);
+        RETURN NEW;
+    END
+    $$ LANGUAGE plpgsql;
+
+CREATE TRIGGER offres_de_stage_trigger BEFORE INSERT ON projet_bd.offres_de_stage FOR EACH ROW EXECUTE PROCEDURE projet_bd.encoder_offres_de_stage();
+
+CREATE OR REPLACE FUNCTION projet_bd.encoder_offre(nvSemestre projet_bd.semestres, nvDescription VARCHAR, nvEntreprise CHAR(3)) RETURNS INTEGER AS $$
+    DECLARE
+        id INTEGER;
+    BEGIN
+        INSERT INTO projet_bd.offres_de_stage (code, semestre, description, entreprise) VALUES (null, nvSemestre, nvDescription, nvEntreprise) RETURNING id_offre INTO id;
+        RETURN id;
+    END
+    $$ LANGUAGE plpgsql;
+
+SELECT * FROM projet_bd.encoder_offre('Q1', 'exemple de description', 'TEC');
+
+-- application entreprises 3
+CREATE OR REPLACE FUNCTION projet_bd.attribuer_mot_cle() RETURNS TRIGGER AS $$
+    DECLARE
+        total INTEGER;
+    BEGIN
+        SELECT COUNT(*) FROM projet_bd.mots_cles_de_stage mcs WHERE mcs.offre_stage = NEW.offre_stage INTO total;
+        IF (total = 3) THEN
+            RAISE 'Il y a déjà 3 mots clés associés à cette offre de stage';
+        END IF;
+        RETURN NEW;
+    END
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER mots_cles_de_stage_trigger BEFORE INSERT ON projet_bd.mots_cles_de_stage FOR EACH ROW EXECUTE PROCEDURE projet_bd.attribuer_mot_cle();
+
+-- INSERT INTO projet_bd.mots_cles_de_stage VALUES (1, 1);
+-- INSERT INTO projet_bd.mots_cles_de_stage VALUES (1, 2);
+-- INSERT INTO projet_bd.mots_cles_de_stage VALUES (1, 3);
+-- INSERT INTO projet_bd.mots_cles_de_stage VALUES (1, 4); -- cette requête est sensé renvoyée l'erreur du trigger
